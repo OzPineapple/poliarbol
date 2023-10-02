@@ -1,109 +1,109 @@
-// var svg = d3.select("#svg");
+var data = {
+	nodes: [
+		{ id: 1, r: 8, dis: 1, fill: "green", /*x: 250, y: 350*/ },
+		{ id: 2, r: 8, dis: 1, fill: "red",   /*x: 225, y: 325*/ },
+		{ id: 3, r: 8, dis: 1, fill: "blue",  /*x: 200, y: 300*/ },
+		{ id: 4, r: 8, dis: 2, fill: "blue",  /*x: 200, y: 300*/ },
+		{ id: 5, r: 8, dis: 2, fill: "blue",  /*x: 200, y: 300*/ },
+		{ id: 6, r: 8, dis: 2, fill: "blue",  /*x: 200, y: 300*/ },
+		{ id: 7, r: 8, dis: 2, fill: "blue",  /*x: 200, y: 300*/ },
+		{ id: 8, r: 8, dis: 1, fill: "blue",  /*x: 200, y: 300*/ },
+	],
+	links: [
+		{ source: 2, target: 3 },
+		{ source: 2, target: 1 },
+		{ source: 4, target: 2 },
+		{ source: 7, target: 6 },
+		{ source: 5, target: 4 },
+		{ source: 6, target: 3 },
+		{ source: 8, target: 3 },
+	]
+}
 
-var width = 700;
-var height = 500;
-const color = d3.scaleOrdinal(d3.schemeCategory10);
+var svg,links,nodes,simulation;
 
-var svg, link, node, simulation;
+svg = d3.select("#svg");
 
-var data;
-var backup;
-d3.json("data.json").then( function( json ){
-	console.log( json );
-	backup = json;
-	data = {
-		nodes: json.nodes.map( d => {console.log( d );   return {id: d.id} } ),
-		links: json.links.map( d => { console.log( d );return {source: d.source, target: d.target } } )
-	}
+links = svg.append("g").selectAll().data( data.links ).join("line")
+	.attr("stroke", "black")
+	.attr("stroke-opacity", 1)
+	.attr("stroke-width", 3 );
 
-	console.log( data );
+nodes = svg.append("g").selectAll().data( data.nodes ).join("circle")
+	.attr("r", d => d.r )
+	.attr( "fill", d => d.fill );
 
+simulation = d3.forceSimulation(data.nodes)
+	.force("center", d3.forceCenter(
+		svg.attr("width")/2,
+		svg.attr("height")/2,
+	))
+	.force("collide", d3.forceCollide().radius(d=>d.r+10))
+	.force("links", d3.forceLink(data.links)
+		.distance((d)=>{
+			return d.source.dis * 50;
+		})
+		.id(d=>d.id)
+	)
+	.on("tick", ticked );
 
+nodes.on( "click", (e,o) => {
+	var node = { id: data.nodes.length + 1, r: 9, dis: 1, fill: "purple", /*x: 250, y: 350*/ };
+	var link = { source: data.nodes.length, target: o.id }
+	data.nodes.push( node )
+	data.links.push( link )
 
-  // Create the SVG container.
-  svg = d3.select("#svg")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("viewBox", [0, 0, width, height])
-      .attr("style", "max-width: 100%; height: auto;");
+	simulation.nodes( data.nodes ).on("tick", ticked);
+	simulation.force("links").links(data.links);
+	simulation.alpha(1).restart();
 
-  // Add a line for each link, and a circle for each node.
-  link = svg.append("g")
-      .attr("stroke", "#999")
-      .attr("stroke-opacity", 0.6)
-    .selectAll()
-    .data(data.links)
-    .join("line")
-      //.attr("stroke-width", d => Math.sqrt(d.value));
+	var up_links = links.selectAll().data( data.links )
+	links = up_links.enter().append("line").merge(up_links);
+	up_links.exit().remove();
 
-  node = svg.append("g")
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
-    .selectAll()
-    .data(data.nodes)
-    .join("circle")
-      .attr("r", 10)
-      .attr("fill", d => color(d.group) );
-
-// Create a simulation with several forces.
-  simulation = d3.forceSimulation(data.nodes)
-      .force("link", d3.forceLink(data.links).id(d => d.id))
-      .force("charge", d3.forceManyBody())
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .on("tick", ticked);
-
-  node.append("title")
-      .text(d => d.id);
-
-  // Add a drag behavior.
-  node.call(d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended));
-
-	node.on("click", function( obj1, obj ){
-		alert( obj );
-		console.log( obj1, obj );
-		console.log( backup.nodes.find( d => d.id = obj.id ) );
-	});
+	var up_nodes = nodes.selectAll().data( data.nodes )
+	nodes = up_nodes.enter().append("circle").merge(up_nodes);
+	up_nodes.exit().remove();
 });
 
-  // Set the position attributes of links and nodes each time the simulation ticks.
-  function ticked() {
-    link
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
+function ticked() {
+	links
+		.attr("x2", d => d.source.x)
+		.attr("y2", d => d.source.y)
+		.attr("x1", d => d.target.x)
+		.attr("y1", d => d.target.y)
+	;
 
-    node
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y);
-  }
+	nodes
+		.attr("cx", d => d.x)
+		.attr("cy", d => d.y)
+	;
+}
 
-  // Reheat the simulation when drag starts, and fix the subject position.
-  function dragstarted(event) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
-    event.subject.fx = event.subject.x;
-    event.subject.fy = event.subject.y;
-  }
+// ISC LICENCE
+// Add a drag behavior.
+nodes.call(d3.drag()
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended));
 
-  // Update the subject (dragged node) position during drag.
-  function dragged(event) {
-    event.subject.fx = event.x;
-    event.subject.fy = event.y;
-  }
+// Reheat the simulation when drag starts, and fix the subject position.
+function dragstarted(event) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  event.subject.fx = event.subject.x;
+  event.subject.fy = event.subject.y;
+}
 
-  // Restore the target alpha so the simulation cools after dragging ends.
-  // Unfix the subject position now that it’s no longer being dragged.
-  function dragended(event) {
-    if (!event.active) simulation.alphaTarget(0);
-    event.subject.fx = null;
-    event.subject.fy = null;
-  }
+// Update the subject (dragged node) position during drag.
+function dragged(event) {
+  event.subject.fx = event.x;
+  event.subject.fy = event.y;
+}
 
-  // When this cell is re-run, stop the previous simulation. (This doesn’t
-  // really matter since the target alpha is zero and the simulation will
-  // stop naturally, but it’s a good practice.)
-//  invalidation.then(() => simulation.stop());
-
+// Restore the target alpha so the simulation cools after dragging ends.
+// Unfix the subject position now that it’s no longer being dragged.
+function dragended(event) {
+  if (!event.active) simulation.alphaTarget(0);
+  event.subject.fx = null;
+  event.subject.fy = null;
+}
