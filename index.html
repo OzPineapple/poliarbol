@@ -1,18 +1,19 @@
+<!DOCTYPE html>
 <html lang="es">
 	<head>
 		<meta charset="utf-8">
 		<title>PoliÁrbol</title>
 		<link rel="stylesheet" type="text/css" href="css/style.css">
 	</head>
-	<body>
-		<nav>
-			Boleta: 2020000000
-		</nav>
-		<svg id="view" width="1200" height="900"></svg>
+		<nav id="nav"></nav>
+		<svg id="view"></svg>
 		<div id="modal" class="display: none">
 			<div id="modal-content">
 				<div id="content">
 				</div>
+				<button id="done">
+					Marcar como completado
+				</button>
 				<button id="close">
 					Cerrar
 				</button>
@@ -20,6 +21,7 @@
 		</div>
 	</body>
 	<script type="text/javascript" src="js/lib/d3.v7.min.js"></script>
+	<script type="text/javascript" src="js/src.js"></script>
 	<script type="text/javascript" src="js/data.js"></script>
 	<script type="text/javascript" src="js/main.js"></script>
 </html>
