@@ -1,3 +1,6 @@
+console.log( document.cookie );
+var source = document.cookie ? JSON.parse( document.cookie ) : source_default;
+
 function getData(){
 	var nodes = [];
 	var links = [];

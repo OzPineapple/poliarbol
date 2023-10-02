@@ -5,36 +5,44 @@ svg = d3.select("#view");
 
 svg.attr("width", document.body.offsetWidth )
 svg.attr("height", document.body.offsetHeight * 0.9 )
+var width = svg.attr("width");
+var height = svg.attr("height");
+svg.attr("viewBox", [0, 0, width, height] );
 
-links = svg.append("g").selectAll("line");
-nodes = svg.append("g").selectAll("circle");
+var g = svg.append("g")
+
+svg.call(d3.zoom()
+	.extent([[0,0], [width, height]])
+	.scaleExtent([1, 8])
+	.on("zoom", ({transform})=>{ 
+	g.attr("transform", transform);
+}))
+
+links = g.append("g").selectAll("line");
+nodes = g.append("g").selectAll("circle");
 
 simulation = d3.forceSimulation( data.nodes )
 	.force("link",    d3.forceLink( data.links ).id( d => d.id ))
-	.force("collide", d3.forceCollide().radius(20) )
-	.force("charge",  d3.forceManyBody().strength(-30))
+	.force("collide", d3.forceCollide().radius(15) )
+	.force("charge",  d3.forceManyBody().strength(-60))
 	.force("center",  d3.forceCenter( 
-		svg.attr("width")/2,
-		svg.attr("height")/2
+		width/2,
+		height/2
 	))
 	.tick(10)
 	.on("tick", () => {
-		var radius = 10;
-		var width = svg.attr("width");
-		var height = svg.attr("height");
 		links
-			.attr("x1", d => Math.max( radius, Math.min( width  - radius, d.source.x) ) )
-			.attr("y1", d => Math.max( radius, Math.min( height - radius, d.source.y) ) )
-			.attr("x2", d => Math.max( radius, Math.min( width  - radius, d.target.x) ) )
-			.attr("y2", d => Math.max( radius, Math.min( height - radius, d.target.y) ) )
+			.attr("x1", d => /*(Math.max( radius, Math.min( width  - radius, */ d.source.x /* ) )*/ )
+			.attr("y1", d => /*(Math.max( radius, Math.min( height - radius, */ d.source.y /* ) )*/ )
+			.attr("x2", d => /*(Math.max( radius, Math.min( width  - radius, */ d.target.x /* ) )*/ )
+			.attr("y2", d => /*(Math.max( radius, Math.min( height - radius, */ d.target.y /* ) )*/ )
 		;
 		nodes
-			.attr("cx", d => Math.max(radius, Math.min(width - radius, d.x) ) )
-			.attr("cy", d => Math.max(radius, Math.min(height - radius, d.y) ) )
+			.attr("cx", d => /* Math.max(radius, Math.min(width - radius,  */ d.x /* ) ) */ )
+			.attr("cy", d => /* Math.max(radius, Math.min(height - radius, */ d.y /* ) ) */ )
 		;
 	});
 simulation.stop();
-
 
 function update(){
 	let new_data = getData();
@@ -50,6 +58,10 @@ function update(){
 	}
 
 	data = new_data;
+
+	document.cookie = "map="+ JSON.stringify( data );
+	
+	console.log( document.cookie );
 
 	links = links.data( data.links, d => d )
 		.join(
@@ -112,11 +124,12 @@ function info( node ){
 	if( node.description ) 
 		content.innerHTML += "<br>" + node.description;
 	if( node.depends ){
-		content.innerHTML += "<br><b>Depende de:</b> ";
+		content.innerHTML += "<br><b>Dependencias:</b><ul>";
 		for( let dep of node.depends )
 			 getNode( dep, node => {
-				content.innerHTML += node.name + ', ';
+				content.innerHTML += '<li>'+node.name + '</li>';
 			});
+		content.innerHTML += '</ul>';
 	}
 //	add( node );
 }

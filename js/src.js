@@ -1,4 +1,4 @@
-var source = {
+var source_default = {
 	main: [
 		{ id: "START", type: "INFO", status: "AVAL", name: "Inicio", fixed: true, fx: document.body.offsetWidth/2, fy: document.body.offsetHeight/2  },
 		{ id: "R01",   type: "TASK", status: "LOCK", name: "Inscripción", 	depends: [ "START" ] },
